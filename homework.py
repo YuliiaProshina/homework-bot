@@ -81,6 +81,7 @@ def get_api_answer(timestamp):
         )
     return response.json()
 
+
 def check_response(response):
     """Проверяет ответ API на соответствие документации."""
     if not isinstance(response, dict):
