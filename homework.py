@@ -6,6 +6,7 @@ import sys
 from dotenv import load_dotenv
 from telebot import TeleBot, apihelper
 
+from exceptions import APIRequestError
 
 load_dotenv()
 
@@ -13,6 +14,7 @@ PRACTICUM_TOKEN = 'PRACTICUM_SECRET_TOKEN'
 TELEGRAM_TOKEN = 'TELEGRAM_SECRET_TOKEN'
 TELEGRAM_CHAT_ID = 592505308
 RETRY_PERIOD = 600
+REQUEST_TIMEOUT = 10
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
 payload = {'from_date': 1765548668}
@@ -40,7 +42,7 @@ def send_message(bot, message):
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
         logging.debug('Сообщение отправлено в чат %s', TELEGRAM_CHAT_ID)
-    except apihelper.ApiException as error:
+    except (apihelper.ApiException, requests.RequestException) as error:
         logging.error(
             'Ошибка при отправке сообщения в Telegram: %s',
             error
@@ -58,12 +60,12 @@ def get_api_answer(timestamp):
             ENDPOINT,
             headers=HEADERS,
             params=params,
-            timeout=10,
+            timeout=REQUEST_TIMEOUT,
         )
     except requests.RequestException as error:
-        raise Exception('Ошибка при запросе к API: %s', error,)
+        raise APIRequestError('Ошибка при запросе к API: %s', error,)
     if response.status_code != requests.codes.ok:
-        raise Exception(
+        raise requests.exceptions.HTTPError(
             f'Endpoint {ENDPOINT} недоступен. '
             f'Код ответа API: {response.status_code}'
         )
